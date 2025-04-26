@@ -1,9 +1,10 @@
 pipeline {
     agent {
-      docker-clound {
-        image 'node:16'
-        args '-u root'
-      }
+        label 'dind'
+        docker {
+            image 'node:16'
+            args '-u root'
+        }
     }
     tools {
         nodejs 'NodeJS 16.x'
