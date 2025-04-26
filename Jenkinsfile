@@ -1,18 +1,11 @@
 pipeline {
-    agent {
-        label 'dind'
-        docker {
-            image 'node:16'
-            args '-u root'
-        }
-    }
-    tools {
-        nodejs 'NodeJS 16.x'
-    }
+    agent any
     stages {
         stage('Build') {
             steps {
-                sh 'npm install'
+                nodejs(nodeJSInstallationName: 'Node 6.x', configId: '<config-file-provider-id>') {
+                    sh 'npm config ls'
+                }
             }
         }
         // 2. SAST
