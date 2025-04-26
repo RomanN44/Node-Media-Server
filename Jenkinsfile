@@ -10,6 +10,7 @@ pipeline {
         // }
         stage('SAST with Semgrep') {
             steps {
+                sh 'python3 -m pip install semgrep' 
                 sh 'semgrep --config=auto .'
                 sh 'semgrep --config=auto --sarif . > semgrep-results.sarif'
             }
