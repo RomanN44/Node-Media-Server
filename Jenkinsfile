@@ -5,6 +5,8 @@ pipeline {
     environment {
         DOJO_API = "https://s410-exam.cyber-ed.space:8083/api/v2"
         API_TOKEN = '5c45847565eea7c9c5551f49ad8d72c64a72fa36'
+        ZAP_REPORT_DIR = './zap-reports/'
+        ZAP_REPORT = 'report_site.xml'
     }
     stages {
         stage('SAST') {
@@ -30,15 +32,17 @@ pipeline {
                         ZAP_VERSION=\$(curl -s https://api.github.com/repos/zaproxy/zaproxy/releases/latest | sed -n 's/.*"tag_name": "\([^"]*\)".*/\1/p')
                         curl -sL "https://github.com/zaproxy/zaproxy/releases/download/\${ZAP_VERSION}/ZAP_\${ZAP_VERSION#v}_Linux.tar.gz" | tar -xz -C /opt
                         ln -s /opt/ZAP_*/zap.sh /usr/local/bin/zap
-                        mkdir -p "./zap-reports/"
+
+                        mkdir -p "${ZAP_REPORT_DIR}"
+
                         python3 /opt/ZAP_*/zap-full-scan.py \
                             -I -j -m 10 -T 60 \
                             -t "https://s410-exam.cyber-ed.space:8084" \
-                            -x ./zap-reports/report_site.xml
-                        cp ./zap-reports/report_site.xml .
+                            -x "${ZAP_REPORT_DIR}/${ZAP_REPORT}"
+                        cp "${ZAP_REPORT_DIR}/${ZAP_REPORT}" .
                     """
-                    archiveArtifacts artifacts: "report_site.xml", allowEmptyArchive: true
-                    stash(name: 'zap-report', includes: "report_site.xml")
+                    archiveArtifacts artifacts: "${ZAP_REPORT}", allowEmptyArchive: true
+                    stash(name: 'zap-report', includes: "${ZAP_REPORT}")
                 }
             }
         }
