@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+      docker {
+        image 'node:16'
+        args '-u root'
+      }
+    }
     tools {
         nodejs 'NodeJS 16.x'
     }
