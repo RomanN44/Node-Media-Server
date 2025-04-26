@@ -8,17 +8,26 @@ pipeline {
         //         }
         //     }
         // }
-        // 2. SAST
         stage('SAST with Semgrep') {
             steps {
                 sh 'semgrep --config=auto .'
                 sh 'semgrep --config=auto --sarif . > semgrep-results.sarif'
             }
         }
-        // 3. SCA
+
         stage('SCA with Dependency-Track') {
             steps {
-                sh 'dependency-track-ctl.sh upload-bom --project-name "Node-Media-Server" --project-version "1.0" --bom bom.xml'
+                // Генерация BOM файла
+                sh 'npm install -g @cyclonedx/cyclonedx-npm'
+                sh 'cyclonedx-npm --output bom.xml'
+                
+                // Загрузка BOM через API
+                sh """
+                curl -X POST -H "X-API-Key: odt_SfCq7Csub3peq7Y6lSlQy5Ngp9sSYpJl" \
+                -H "Content-Type: application/xml" \
+                --data-binary @bom.xml \
+                "https://s410-exam.cyber-ed.space:8081/api/v1/bom"
+                """
             }
         }
 
