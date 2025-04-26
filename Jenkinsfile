@@ -54,5 +54,16 @@ pipeline {
                 }
             }
         }
+        stage('Container Security') {
+            steps {
+                script {
+                sh '''
+                    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+                    docker build -t node-media-server:${BUILD_ID} .
+                    trivy image --format cyclonedx --output sbom.json your-nodejs-app:${BUILD_ID}
+                     curl -X POST -H "X-API-Key: ${API_KEY}" -H "Content-Type: application/json" --data-binary @sbom.json ${DEP_TRACK_API}/api/v1/bom
+                '''
+            }
+        }
     }
 }
