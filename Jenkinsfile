@@ -2,6 +2,10 @@ pipeline {
     agent {
         label 'dind'
     }
+    environment {
+        // Для кеширования правил Semgrep (опционально)
+        SEMGREP_SETTINGS_FILE = "${WORKSPACE}/.semgrep/settings.yaml"
+    }
     stages {
         // stage('Build') {
         //     steps {
@@ -15,11 +19,27 @@ pipeline {
                 checkout scm 
             }
         }
-        stage('Semgrep') {
+        stage('Semgrep Scan') {
             steps {
                 script {
-                    docker.image('returntocorp/semgrep').inside {
-                    sh 'semgrep --config=auto .'
+                    // Запуск Semgrep в Docker-контейнере
+                    docker.image('semgrep/semgrep:latest').inside('-v /var/run/docker.sock:/var/run/docker.sock') {
+                        sh '''
+                            semgrep scan \
+                            --config auto \
+                            --metrics=off \
+                            --error \  # Завершить с ненулевым кодом при нахождении проблем
+                            --exclude="tests,examples" \
+                            --sarif \  # Формат вывода (опционально)
+                            -o results.sarif
+                        '''
+                    }
+                }
+            }
+            post {
+                always {
+                    // Артефакт с результатами сканирования
+                    archiveArtifacts artifacts: 'results.sarif', allowEmptyArchive: true
                 }
             }
         }
