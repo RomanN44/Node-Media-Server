@@ -1,31 +1,17 @@
-#!groovy
 pipeline {
     agent any
     stages {
-        stage('sast-semgrep') {
-            when {
-                beforeAgent true
-                anyOf {
-                    expression { params.STAGE == 'all' }
-                    expression { params.STAGE == 'sast-semgrep' }
-                }
-            }
-            options {
-                timeout(time: 1, unit: 'HOURS')  // Таймаут для stage
-                retry(0)  // Отключаем повторные попытки
-            }
+        stage('SAST') {
             steps {
-                catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
-                    script {
-                        sh '''
-                            apk add --update python3 py3-pip py3-virtualenv
-                            python3 -m venv venv
-                            . venv/bin/activate
-                            pip install semgrep
-                            venv/bin/semgrep --config=auto --verbose --json > report_semgrep.json 
-                            '''
-                        archiveArtifacts artifacts: 'report_semgrep.json', allowEmptyArchive: true
-                    }
+                script {
+                    sh '''
+                        apt-get update && apt-get install -y python3 python3-pip python3-venv
+                        python3 -m venv venv
+                        . venv/bin/activate
+                        pip install semgrep
+                        venv/bin/semgrep --config=auto --verbose --json > report_semgrep.json
+                        '''
+                    archiveArtifacts artifacts: 'report_semgrep.json', allowEmptyArchive: true
                 }
             }
         }
