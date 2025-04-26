@@ -3,9 +3,9 @@ pipeline {
         label 'dind'
     }
     environment {
-        DOJO_API = "https://s410-exam.cyber-ed.space:8083/api/v2"
-        API_TOKEN = '5c45847565eea7c9c5551f49ad8d72c64a72fa36'
         ZAP_TARGET = 'https://s410-exam.cyber-ed.space:8084'
+        DEP_TRACK_API = 'https://s410-exam.cyber-ed.space:8080'
+        DEP_TRACK_KEY = 'odt_SfCq7Csub3peq7Y6lSlQy5Ngp9sSYpJl'
     }
     stages {
         stage('SAST') {
@@ -35,22 +35,22 @@ pipeline {
                         cd ZAP_2.16.1/
                         ./zap.sh -cmd -quickurl ${ZAP_TARGET} -quickout zap-report.html
                     '''
-                    archiveArtifacts artifacts: 'zap-report.*', allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'zap-report.html', allowEmptyArchive: true
                 }
             }
         }
-        stage('DefectDojo') {
+        stage('SCA') {
             steps {
+                sh '''
+                    npm install -g @cyclonedx/cdxgen
+                    cdxgen -o bom.xml
+                    curl -X POST -H "Content-Type: application/xml" -H "X-API-Key: ${DEP_TRACK_KEY}" --data-binary @bom.xml ${DEP_TRACK_API}/api/v1/bom
+                '''
                 script {
-                    sh '''
-                    curl -X POST "{$URL_DOJO}/import-scan" \
-                    -H "Authorization: Token ${API_TOKEN}" \
-                    -H "Content-Type: multipart/form-data" \
-                    -F "scan-type=Semgrep JSON Report" \
-                    -F "file=report_semgrep.json" \
-                    -F "engagement=1"
-                    -F "verified=true"
-                    '''
+                    def vulnerabilities = sh(script: 'curl -H "X-API-Key: ${DEP_TRACK_KEY}" ${DEP_TRACK_API}/api/v1/project/{uuid}/vulnerabilities', returnStdout: true)
+                    if (vulnerabilities.contains('"critical":')) {
+                        error "FIND CRITICAL VULH!"
+                    }
                 }
             }
         }
