@@ -18,13 +18,11 @@ pipeline {
         stage('Semgrep') {
             steps {
                 script {
-                    docker.image('returntocorp/semgrep').inside('-v $PWD:/src -w /src') {
-                        sh 'semgrep --config auto .'
-                    }
+                    docker.image('returntocorp/semgrep').inside {
+                    sh 'semgrep --config=auto .'
                 }
             }
         }
-
         // stage('SCA with Dependency-Track') {
         //     steps {
         //         // Генерация BOM файла
