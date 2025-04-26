@@ -44,11 +44,11 @@ pipeline {
             }
         }
     }
-    post {
-        always {
-            // Публикация отчетов
-            publishHTML(target: [reportDir: '.', reportFiles: 'zap-report.html', reportName: 'ZAP Report'])
-            dependencyTrackPublisher()
-        }
-    }
+    // post {
+    //     always {
+    //         // Публикация отчетов
+    //         publishHTML(target: [reportDir: '.', reportFiles: 'zap-report.html', reportName: 'ZAP Report'])
+    //         dependencyTrackPublisher()
+    //     }
+    // }
 }
