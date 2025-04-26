@@ -1,7 +1,7 @@
 pipeline {
-    // agent {
-    //     label 'docker-agent' // Используйте выделенный агент, не master
-    // }
+    agent {
+        label 'docker-agent'
+    }
     stages {
         // 1. Сборка приложения
         stage('Build') {
