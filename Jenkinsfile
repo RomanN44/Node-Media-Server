@@ -24,15 +24,7 @@ pipeline {
                 script {
                     // Запуск Semgrep в Docker-контейнере
                     docker.image('semgrep/semgrep:latest').inside('-v /var/run/docker.sock:/var/run/docker.sock') {
-                        sh '''
-                            semgrep scan \
-                            --config auto \
-                            --metrics=off \
-                            --error \  # Завершить с ненулевым кодом при нахождении проблем
-                            --exclude="tests,examples" \
-                            --sarif \  # Формат вывода (опционально)
-                            -o results.sarif
-                        '''
+                        sh 'semgrep scan --config auto --metrics=off --error --exclude="tests,examples" --sarif -o results.sarif'
                     }
                 }
             }
