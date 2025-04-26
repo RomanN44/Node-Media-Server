@@ -8,6 +8,19 @@ pipeline {
         DEP_TRACK_KEY = 'odt_SfCq7Csub3peq7Y6lSlQy5Ngp9sSYpJl'
     }
     stages {
+        stage('Install Node.js') {
+            steps {
+                sh '''
+                    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+                    apt-get install -y nodejs
+                '''
+            }
+        }
+        stage('Build') {
+            steps {
+                sh 'npm install' 
+            }
+        }
         stage('SAST') {
             steps {
                 script {
