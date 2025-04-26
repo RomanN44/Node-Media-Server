@@ -1,5 +1,7 @@
 pipeline {
-    agent any
+    agent {
+        label 'dind'
+    }
     stages {
         stage('SAST') {
             steps {
