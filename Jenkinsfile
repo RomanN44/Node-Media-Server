@@ -55,7 +55,8 @@ pipeline {
         stage('SCA') {
             steps {
                 sh '''
-                    npm install -g @cyclonedx/cdxgen
+                    sudo chown -R $USER /usr/lib/node_modules
+                    sudo npm install -g @cyclonedx/cdxgen
                     cdxgen -o bom.xml
                     curl -X POST -H "Content-Type: application/xml" -H "X-API-Key: ${DEP_TRACK_KEY}" --data-binary @bom.xml ${DEP_TRACK_API}/api/v1/bom
                 '''
@@ -74,7 +75,7 @@ pipeline {
                     curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
                     docker build -t node-media-server:${BUILD_ID} .
                     trivy image --format cyclonedx --output sbom.json your-nodejs-app:${BUILD_ID}
-                     curl -X POST -H "X-API-Key: ${API_KEY}" -H "Content-Type: application/json" --data-binary @sbom.json ${DEP_TRACK_API}/api/v1/bom
+                    curl -X POST -H "X-API-Key: ${API_KEY}" -H "Content-Type: application/json" --data-binary @sbom.json ${DEP_TRACK_API}/api/v1/bom
                 '''
             }
         }
