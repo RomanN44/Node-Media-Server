@@ -1,84 +1,33 @@
 #!groovy
 pipeline {
-    agent {
-        label 'dind'
-    }
-    environment {
-        // Для кеширования правил Semgrep (опционально)
-        SEMGREP_SETTINGS_FILE = "${WORKSPACE}/.semgrep/settings.yaml"
-    }
+    agent any
     stages {
-        // stage('Build') {
-        //     steps {
-        //         nodejs(nodeJSInstallationName: 'Node 6.x', configId: '<config-file-provider-id>') {
-        //             sh 'npm config ls'
-        //         }
-        //     }
-        // }
-        stage('Checkout') {
-            steps {
-                checkout scm 
+        stage('sast-semgrep') {
+            when {
+                beforeAgent true
+                anyOf {
+                    expression { params.STAGE == 'all' }
+                    expression { params.STAGE == 'sast-semgrep' }
+                }
             }
-        }
-        stage('Semgrep Scan') {
+            options {
+                timeout(time: 1, unit: 'HOURS')  // Таймаут для stage
+                retry(0)  // Отключаем повторные попытки
+            }
             steps {
-                script {
-                    // Запуск Semgrep в Docker-контейнере
-                    docker.image('semgrep/semgrep:latest').inside('-v /var/run/docker.sock:/var/run/docker.sock') {
-                        sh 'semgrep scan --config auto --metrics=off --error --exclude="tests,examples" --sarif -o results.sarif'
+                catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+                    script {
+                        sh '''
+                            apk add --update python3 py3-pip py3-virtualenv
+                            python3 -m venv venv
+                            . venv/bin/activate
+                            pip install semgrep
+                            venv/bin/semgrep --config=auto --verbose --json > report_semgrep.json 
+                            '''
+                        archiveArtifacts artifacts: 'report_semgrep.json', allowEmptyArchive: true
                     }
                 }
             }
-            post {
-                always {
-                    // Артефакт с результатами сканирования
-                    archiveArtifacts artifacts: 'results.sarif', allowEmptyArchive: true
-                }
-            }
         }
-        // stage('SCA with Dependency-Track') {
-        //     steps {
-        //         // Генерация BOM файла
-        //         sh 'npm install -g @cyclonedx/cyclonedx-npm'
-        //         sh 'cyclonedx-npm --output bom.xml'
-                
-        //         // Загрузка BOM через API
-        //         sh """
-        //         curl -X POST -H "X-API-Key: odt_SfCq7Csub3peq7Y6lSlQy5Ngp9sSYpJl" \
-        //         -H "Content-Type: application/xml" \
-        //         --data-binary @bom.xml \
-        //         "https://s410-exam.cyber-ed.space:8081/api/v1/bom"
-        //         """
-        //     }
-        // }
-
-        // // 4. Сборка Docker-образа
-        // stage('Build Docker Image') {
-        //     steps {
-        //         sh 'docker build -t node-media-server:latest .'
-        //     }
-        // }
-
-        // // 5.(Trivy + Dependency-Track)
-        // stage('Container Security with Trivy') {
-        //     steps {
-        //         sh 'trivy image --format cyclonedx --output trivy-results.json node-media-server:latest'
-        //         sh 'dependency-track-ctl.sh upload-scan --project-name "Node-Media-Server" --scan trivy-results.json'
-        //     }
-        // }
-
-        // // 6. DAST
-        // stage('DAST with OWASP ZAP') {
-        //     steps {
-        //         sh 'zap-baseline.py -t http://localhost:8000 -r zap-report.html'
-        //     }
-        // }
     }
-    // post {
-    //     always {
-    //         // Публикация отчетов
-    //         publishHTML(target: [reportDir: '.', reportFiles: 'zap-report.html', reportName: 'ZAP Report'])
-    //         dependencyTrackPublisher()
-    //     }
-    // }
 }
