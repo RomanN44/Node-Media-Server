@@ -1,7 +1,5 @@
 pipeline {
-    agent {
-        label 'docker-agent'
-    }
+    agent any
     stages {
         // 1. Сборка приложения
         stage('Build') {
