@@ -1,6 +1,6 @@
 pipeline {
     agent {
-      docker {
+      docker-clound {
         image 'node:16'
         args '-u root'
       }
